@@ -1,0 +1,96 @@
+{
+  "templates": [
+    {
+      "sender": "transaction@belo.app",
+      "regexFilter": "\\$",
+      "mappings": [
+        {
+          "pattern": "^You've transferred \\$(?P<value>\\d{1,}\\.?\\d{1,2}) to (?P<transferee>[a-zA-Z ]{1,}).*$",
+          "name": "Belo Outgoing Transfers",
+          "description": "Belo outgoing transfers",
+          "metric": {
+            "name": "belo_outgoing_transfers"
+          },
+          "labels": [
+            "transferee"
+          ]
+        },
+        {
+          "pattern": "^Your belo account received a transfer of \\$(?P<value>\\d{1,}\\.?\\d{1,2}) from (?P<transferor>\\D{1,})$",
+          "name":"Belo Incoming Transfers",
+          "description": "Belo incoming transfers",
+          "metric": {
+            "name": "belo_incoming_transfers"
+          },
+          "labels": [
+            "transferor"
+          ]
+        },
+        {
+          "pattern": "^You've received a \\$(?P<value>\\d{1,}\\.?\\d{1,2}) refund for your purchase at (?P<reimburser>\\D{1,})$",
+          "name": "Belo Refunds",
+          "description": "Belo refunds",
+          "metric" : {
+            "name": "belo_refunds"
+          },
+          "labels": [
+            "reimburser"
+          ]
+        },
+        {
+          "pattern": "^Your (?P<amount_from>\\d{1,}\\.?\\d{1,}) (?P<currency_from>[A-Z]{1,5}) to \\$(?P<value>\\d{1,}\\.?\\d{1,2}) swap.*$",
+          "name": "Belo Swap to ARS",
+          "description": "Swap to ARS",
+          "metric": {
+            "name": "belo_swap_to_ars"
+          },
+          "labels": [
+            "amount_from",
+            "currency_from"
+          ]
+        },
+        {
+          "pattern": "^Your \\$(?P<value>\\d{1,}\\.?\\d{1,2}) to (?P<amount_to>\\d{1,}\\.?\\d{1,}) (?P<currency_to>[A-Z]{1,5}) swap.*$",
+          "name": "Belo Swap from ARS",
+          "description": "Swap from ARS",
+          "metric": {
+            "name": "belo_swap_from_ars"
+          },
+          "labels": [
+            "amount_to",
+            "currency_to"
+          ]
+        },
+        {
+          "pattern": "^You withdrew \\$(?P<value>\\d{1,}\\.?\\d{1,2}) to your own account.*$",
+          "name": "Belo Withdrawal",
+          "description": "Belo withdrawal",
+          "metric": {
+            "name": "belo_withdrawal"
+          },
+          "labels": []
+        },
+        {
+          "pattern": "^You made a \\$(?P<value>\\d{1,}\\.?\\d{1,2}) purchase at (?P<store>.{1,})$",
+          "name": "Belo Purchase",
+          "description": "Belo purchase",
+          "metric": {
+            "name": "belo_purchase"
+          },
+          "labels": [
+            "store"
+          ]
+        },
+        {
+          "pattern": "^You received a deposit of \\$(?P<value>\\d{1,}\\.?\\d{1,2})$",
+          "name": "Belo ARS Deposit",
+          "description": "Belo ARS deposit",
+          "metric": {
+            "name": "belo_ars_deposit"
+          },
+          "labels": []
+        }
+      ]
+    }
+  ]
+}

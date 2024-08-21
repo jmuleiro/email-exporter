@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Prometheus Exporter",
+  "description": "Prometheus Exporter",
+  "type":"object",
+  "additionalProperties": false,
+  "required": ["templates"],
+  "properties": {
+    "templates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sender", "mappings"],
+        "properties": {
+          "sender": {
+            "type": "string",
+            "pattern": "[^@ \\t\\r\\n]+@[^@ \\t\\r\\n]+\\.[^@ \\t\\r\\n]+"
+          },
+          "regexFilter": {
+            "$ref": "#/$defs/metricMappingPattern"
+          },
+          "mappings": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/metricMapping"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "label": {
+      "type": "string",
+      "pattern": "[a-zA-Z_][a-zA-Z0-9_]*",
+      "examples": [
+        "checking_account",
+        "currency"
+      ]
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "[a-zA-Z_:][a-zA-Z0-9_:]*"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["counter", "gauge", "summary", "histogram", "info", "enum"],
+          "default": "gauge"
+        },
+        "states": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "[a-zA-Z_][a-zA-Z0-9_]*",
+            "examples": [
+              "version",
+              "build",
+              "release"
+            ]
+          }
+        }
+      }
+    },
+    "metricMappingPattern": {
+      "type": "string",
+      "examples": [
+        "^You've transferred \\$(\\d{1,}\\.?\\d{1,2}) to ([a-zA-Z ]{1,}).*$",
+        "^You've received a \\$(\\d{1,}\\.?\\d{1,2}) refund for your purchase at (\\D{1,})$"
+      ]
+    },
+    "metricMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pattern",
+        "metric"
+      ],
+      "properties": {
+        "pattern": {
+          "$ref": "#/$defs/metricMappingPattern"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "metric": {
+          "$ref": "#/$defs/metric"
+        },
+        "labels": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 15,
+          "items": {
+            "$ref": "#/$defs/label"
+          }
+        }
+      }
+    }
+  }
+}

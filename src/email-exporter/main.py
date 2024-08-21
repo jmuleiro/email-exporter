@@ -15,11 +15,13 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 class MailExporter():
-  def __init__(self, logLevel: str = 'INFO'):
+  def __init__(self, logLevel: str = 'INFO', period: int = 30, interval: int = 1):
     #? Setup logging
     self.log = getLogger(logLevel)
     self.mappings: list[EmailTemplate] = []
     self.parser = MailParser()
+    self.period = period
+    self.interval = interval
   
   #? Mappings property
   @property
@@ -59,8 +61,29 @@ class MailExporter():
     return self._maxResults
   @maxResults.setter
   def maxResults(self, value: str):
-    #todo: validation
+    if not re.search("\d{1,}"):
+      raise TypeError("Max results should be a number")
+    if not re.search("\d{1,3}"):
+      raise TypeError("Max results should be a number of 3 digits at most")
+    if int(value) > 250:
+      raise ValueError("Max results should not exceed 250 results per second or response page, see https://developers.google.com/gmail/api/reference/quota")
     self._maxResults = value
+  
+  #? Polling period property
+  @property
+  def period(self) -> int:
+    return self._period
+  @period.setter
+  def period(self, value: int):
+    self._period = value
+  
+  #? Slept seconds property
+  @property
+  def interval(self) -> int:
+    return self._interval
+  @interval.setter
+  def interval(self, value: int):
+    self._interval = value
 
   def bootstrap(self):
     #? Get JSON mappings
@@ -115,9 +138,8 @@ class MailExporter():
       self.log.debug("Iterating over results")
       for message in self.getEmails(finalQuery):
         self.parser.timestamp = message["internalDate"]
-        #todo use period in seconds global instead of hardcoded value
-        if not (backwardsLookup or self.parser.timestamp / 1000 < time.time() - 30):
-          self.log.debug(f"Skipping message because it was older than {30} seconds")
+        if not (backwardsLookup or self.parser.timestamp / 1000 < time.time() - self.period):
+          self.log.debug(f"Skipping message because it was older than {self.period} seconds")
           continue
         self.parser.feed(base64.urlsafe_b64decode(message["payload"]["body"]["data"]).decode())
 
@@ -146,10 +168,8 @@ class MailExporter():
         yield ((self.mailApi.users().threads().get(userId=self.userId, id=mThread["id"])).execute())["messages"][0]
 
       if nextPageToken:
-        #todo: make configurable (from parameter, this function should not interact with env)
-        sleptSeconds = 1
-        self.log.debug(f"Got nextPageToken, sleeping for {sleptSeconds} second(s)...")
-        time.sleep(sleptSeconds)
+        self.log.debug(f"Got nextPageToken, sleeping for {self.interval} second(s)...")
+        time.sleep(self.interval)
       else:
         self.log.debug("Got to the end of the mail list")
         return
@@ -158,8 +178,8 @@ class MailExporter():
     self.log.debug("Getting credentials")
     creds = None
     SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-    tokenFile = os.getenv("OAUTH_TOKEN_FILENAME", "token.json")
-    credentialsFile = os.getenv("OAUTH_CREDENTIALS_FILENAME", "scripts/gmail-lookup/credentials2.json")
+    tokenFile = os.getenv("EMAIL_EXPORTER_OAUTH_TOKEN", "token.json")
+    credentialsFile = os.getenv("EMAIL_EXPORTER_OAUTH_CREDENTIALS", "scripts/gmail-lookup/credentials2.json")
 
     if os.path.exists(tokenFile):
       creds = Credentials.from_authorized_user_file(tokenFile, SCOPES)
@@ -187,31 +207,30 @@ class MailExporter():
 
     exitCode = 0
     gmailQuery = ""
-    self.maxResults = os.getenv("GMAIL_RESULTS_PER_PAGE", "100")
-    self.userId = os.getenv("GMAIL_USER_ID", "me")
+    self.maxResults = os.getenv("EMAIL_EXPORTERGMAIL_RESULTS_PER_PAGE", "100")
+    self.userId = os.getenv("EMAIL_EXPORTER_GMAIL_USER_ID", "me")
 
     try:
       #? Prometheus Server
-      server, t = start_http_server(int(os.getenv("PORT", "8000")))
+      server, t = start_http_server(int(os.getenv("EMAIL_EXPORTER_PORT", "8000")))
 
       #? Build Gmail API
       self.log.info("Building Gmail API")
       self.mailApi = build("gmail", "v1", credentials=creds)
-      if os.getenv("BACKWARDS_LOOKUP", True):
+      if os.getenv("EMAIL_EXPORTER_BACKWARDS_LOOKUP", True):
         self.log.info("Backwards lookup is enabled")
         self.backwardsLookup(gmailQuery)
       else:
         self.log.info("Backwards lookup is disabled")
 
-      period = float(os.getenv("MAIL_EXPORTER_PERIOD_SECONDS", 30))
-      newerThanHours = os.getenv("MAIL_EXPORTER_NEWER_THAN_HOURS", 1)
-      self.log.info(f"Watching {len(self.mappings)} template(s) every {period} seconds")
+      newerThanHours = os.getenv("EMAIL_EXPORTER_NEWER_THAN_HOURS", 1)
+      self.log.info(f"Watching {len(self.mappings)} template(s) every {self.period} seconds")
       while True:
         self.log.debug(f"Looking for messages in the last {newerThanHours} hour(s)")
         query = gmailQuery + f"newer_than:{newerThanHours}h "
         self.processMappings(query)
-        self.log.debug(f"Sleeping {period}s...")
-        time.sleep(period)
+        self.log.debug(f"Sleeping {self.period}s...")
+        time.sleep(self.period)
 
     except HttpError as e:
       self.log.critical(f"HttpError: {e}")
@@ -227,6 +246,8 @@ class MailExporter():
       exit(exitCode)
 
 if __name__ == "__main__":
-  exporter = MailExporter(os.getenv("LOG_LEVEL"))
+  exporter = MailExporter(os.getenv("EMAIL_EXPORTER_LOG_LEVEL"), 
+                          int(os.getenv("EMAIL_EXPORTER_PERIOD_SECONDS")),
+                          int(os.getenv('EMAIL_EXPORTER_INTERVAL_SECONDS')))
   exporter.bootstrap()
   exporter.main()

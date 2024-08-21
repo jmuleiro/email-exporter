@@ -17,4 +17,4 @@ gcloud auth application-default login \
 The command above will output another command to execute in another terminal, and will idle waiting for an input.
 4. When you execute the second command in another terminal, an OAuth flow will begin in your browser, asking you to log in with the account you wish to authorize access for. If the browser doesn't open, you can click or copy the generated link instead.
 5. Once you've logged in, the second terminal will output a localhost link at the end, which you need to copy and paste into the first terminal.
-6. The SDK will output a message stating `Credentials saved to file`. This means that your environment should now have a `GOOGLE_APPLICATION_CREDENTIALS` variable containing the path to the generated OAuth2 refresh token. You need to pass that JSON file's path as the variable `OAUTH_TOKEN_FILENAME`.
+6. The SDK will output a message stating `Credentials saved to file`. This means that your environment should now have a `GOOGLE_APPLICATION_CREDENTIALS` variable containing the path to the generated OAuth2 refresh token. You need to pass that JSON file's path as the variable `EMAIL_EXPORTER_OAUTH_TOKEN`.

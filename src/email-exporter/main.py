@@ -61,9 +61,9 @@ class MailExporter():
     return self._maxResults
   @maxResults.setter
   def maxResults(self, value: str):
-    if not re.search("\d{1,}"):
+    if not re.search("\d{1,}", value):
       raise TypeError("Max results should be a number")
-    if not re.search("\d{1,3}"):
+    if not re.search("\d{1,3}", value):
       raise TypeError("Max results should be a number of 3 digits at most")
     if int(value) > 250:
       raise ValueError("Max results should not exceed 250 results per second or response page, see https://developers.google.com/gmail/api/reference/quota")
@@ -83,6 +83,10 @@ class MailExporter():
     return self._interval
   @interval.setter
   def interval(self, value: int):
+    if not re.search("\d{1,}", value):
+      raise TypeError("Interval seconds should be a number")
+    if value < 1:
+      raise ValueError("Interval seconds should be 1 second at the very least to prevent hitting the API rate limit")
     self._interval = value
 
   def bootstrap(self):

@@ -1,3 +1,5 @@
+# About
+Email Exporter is a Prometheus server that connects to a Gmail account using OAuth2 credentials and scrapes its inbox based on a JSON mappings file. The server uses Prometheus' [client_python](https://github.com/prometheus/client_python) library for Python under the hood, with some minor tweaks.
 
 # Generating credentials
 

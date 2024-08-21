@@ -86,7 +86,7 @@ class MailParser(HTMLParser):
     """
     Parses Gmail message payloads and drops unnecessary HTML tags and attributes.
     """
-    #? Drop all lines that match the initial filter
+    #? Drop all lines that don't match the initial filter
     if self.template.initialFilter and not re.findall(self.template.initialFilter, data):
       return
     #? Remove emoji
